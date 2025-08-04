@@ -1,5 +1,6 @@
- # microMVP
-microMVP software platform
+# microMVP - An open-source (hardware/software) micro-scale Multi-Vehile-Platform 
+
+![platform](https://github.com/user-attachments/assets/8eb3e424-b11e-4be6-b451-8f8d346e0c92)
 
 Packages Needed for Pure Simulation:
 
