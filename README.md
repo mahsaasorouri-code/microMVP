@@ -1,4 +1,6 @@
-# microMVP - An open-source (hardware/software) micro-scale Multi-Vehile-Platform 
+# microMVP - An open-source (hardware/software) micro-scale Multi-Vehicle Platform 
+
+microMVP (micro multi-vehicle platform) is an affordable, portable, and open-source multi-robot platform. This repository mainly contains the software portion of the project that you need to get the system up and running. For additional information on microMVP hardware, see https://people.cs.rutgers.edu/~jy512/mvp/. 
 
 ![platform](https://github.com/user-attachments/assets/8eb3e424-b11e-4be6-b451-8f8d346e0c92)
 
@@ -34,7 +36,7 @@ From commandline, run:
 	
 	(replace 0 with the camera you want to use if you have multiple cameras)
 	
-Setup your own parameters for the cars:
+Set up your own parameters for the cars:
 
 	open utils.py and modify the parameters:
 	
@@ -47,8 +49,7 @@ Try to test if hardware control works:
 --------------------------------------------------------
 (optional)
 
-To run rvo2, first get the binaries from http://gamma.cs.unc.edu/RVO2/downloads/,
-then build it with the file in our directory: rvo2/RvoCaller.cpp.
+To run rvo2, first get the binaries from http://gamma.cs.unc.edu/RVO2/downloads/, then build it with the file in our directory: rvo2/RvoCaller.cpp.
 
 This generates an executable, rename it as RvoCaller.exe and place it in 
 
@@ -62,8 +63,7 @@ To run the MRPP path planning solver, you need to install Java and Gurobi on you
 	
 	And make sure gurobi is linked to your java.
 
-You can also design your own robot dance patterns or path planning algorithms, 
-please refer to file template.py in directory patterns/ or algorithms/.
+You can also design your own robot dance patterns or path planning algorithms. Please refer to file template.py in directory patterns/ or algorithms/.
 
 --------------------------------------------------------
  All components of this library are licensed under the BSD 3-Clause
