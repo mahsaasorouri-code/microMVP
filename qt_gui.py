@@ -256,7 +256,7 @@ class MainWindow(QMainWindow):
         left.addWidget(QLabel("Path Planning:"))
         self.sel_alg = QComboBox()
         alg_files = [f for f in listdir("algorithms/") if isfile(join("algorithms/", f))]
-        ALLOWED_ALGS = {"mrpp_b.py", "rvo2.py"}
+        ALLOWED_ALGS = {"mrpp_b.py", "rvo2.py", "sets_dd_cbf.py"}
         for f in alg_files:
             if f in ALLOWED_ALGS:
                 self.sel_alg.addItem(f.split(".")[0], f)
