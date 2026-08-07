@@ -1,5 +1,5 @@
 """
-sets_dd_cbf.py
+algorithms/sets_dd_cbf.py
 Wraps the SETS-DD-CBF fully-decentralised planner as a GetPath(locs, goals, wb, bound)
 batch planner for the microMVP GUI. Runs a full offline rollout of the CBF-safe
 multi-robot controller from the current positions to the given goals, in the
