@@ -781,6 +781,19 @@ class RobotAgentFullyDecent:
         return self._mcts_search()
 
     def _admm_step(self, u_nom):
+        # Pre-QP EMA on u_nom only -- smooths MCTS's discrete branch choice
+        # before it ever reaches the CBF/CLF constraints. The QP below still
+        # solves fresh, every step, against the robot's real current position
+        # and real current constraints -- this only changes what the QP is
+        # aiming for, not what it's required to satisfy.
+        u_nom_ema_alpha = 0.35
+        if not hasattr(self, '_u_nom_smoothed'):
+            self._u_nom_smoothed = u_nom.copy()
+        else:
+            self._u_nom_smoothed = (u_nom_ema_alpha * u_nom
+                                     + (1.0 - u_nom_ema_alpha) * self._u_nom_smoothed)
+        u_nom = self._u_nom_smoothed.copy()
+
         p = self.p
         nbr_states = self._inbox.get('nbr_states', {})
         nbr_drifts = self._inbox.get('nbr_drifts', {})
@@ -794,6 +807,29 @@ class RobotAgentFullyDecent:
         z_received = {j: float(nbr_z.get(j, {}).get(self.i, 0.0)) for j in nbr_ids}
 
         f_i = self._local_drift()
+
+        # Supervisor-directed: CLF weight ramp near goal. p_clf stays at
+        # its baseline value everywhere except within a near-goal radius
+        # (5x goal_tol), where it ramps linearly up to 5x baseline right
+        # at the goal -- trusts the CLF goal-tracking term more (less
+        # slack allowed) as the robot closes in, to damp final-approach
+        # fluctuation. Untouched far from goal, as requested.
+        dist_to_goal = float(np.linalg.norm(self.pos - self.goal))
+        ramp_d0 = 2.5 * p['goal_tol']
+        ramp_k = 2.1972245773362196  # width-based: 2*ln(9)/2.0 -- spreads transition over ~2 units instead of ~1
+        ramp = 1.0 / (1.0 + np.exp(ramp_k * (dist_to_goal - ramp_d0)))
+        p_clf_boost = 5.0
+        p_clf_target = p['p_clf'] * (1.0 + (p_clf_boost - 1.0) * ramp)
+
+        # EMA rate-limiter: caps how fast p_clf can actually change per step,
+        # regardless of how steep the sigmoid is at this distance.
+        p_clf_ema_alpha = 0.15
+        if not hasattr(self, '_p_clf_smoothed'):
+            self._p_clf_smoothed = p_clf_target
+        else:
+            self._p_clf_smoothed = (p_clf_ema_alpha * p_clf_target
+                                     + (1.0 - p_clf_ema_alpha) * self._p_clf_smoothed)
+        p_clf_eff = self._p_clf_smoothed
 
         u_safe, z_new = _solve_robot_qp_local(
             i            = self.i,
@@ -815,7 +851,7 @@ class RobotAgentFullyDecent:
             r_threat_obs = p['r_threat_obs'],
             gamma        = p['gamma'],
             gamma_clf    = p['gamma_clf'],
-            p_clf        = p['p_clf'],
+            p_clf        = p_clf_eff,
             epsilon      = p['epsilon'],
         )
 

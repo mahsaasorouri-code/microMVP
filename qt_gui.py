@@ -124,6 +124,26 @@ class Canvas(QWidget):
         painter.setPen(pen)
         painter.drawRect(int(bound.l), int(bound.u), int(bound.width), int(bound.height))
 
+        # draw obstacles (SETS-DD-CBF)
+        try:
+            from algorithms.sets_dd_cbf import OBSTACLES_PX
+        except Exception:
+            OBSTACLES_PX = []
+        if OBSTACLES_PX:
+            from PyQt6.QtGui import QColor
+            obs_pen = QPen(Qt.GlobalColor.darkGray)
+            obs_pen.setWidth(2)
+            painter.setPen(obs_pen)
+            painter.setBrush(QColor(160, 160, 160, 120))
+            for obs in OBSTACLES_PX:
+                if obs["type"] == "circle":
+                    ox, oy, orad = obs["cx"], obs["cy"], obs["r"]
+                    painter.drawEllipse(int(ox - orad), int(oy - orad), int(orad * 2), int(orad * 2))
+                elif obs["type"] == "square":
+                    ox, oy, sz = obs["cx"], obs["cy"], obs["size"]
+                    painter.drawRect(int(ox - sz / 2), int(oy - sz / 2), int(sz), int(sz))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+
         # draw paths + goals
         for idx, car in enumerate(cars):
             path = list(car.path)
@@ -172,6 +192,50 @@ class Canvas(QWidget):
             hy = y + arrow_len * math.sin(th)
             painter.drawLine(int(x), int(y), int(hx), int(hy))
             # =================================
+
+        # draw comparison path (narrow-sigmoid vs wide-sigmoid, SETS-DD-CBF) --
+        # only when that algorithm is actually the one selected right now
+        try:
+            _current_alg = self.app_ref.sel_alg.currentText()
+        except Exception:
+            _current_alg = None
+        if _current_alg == "sets_dd_cbf":
+            import json as _json
+            try:
+                with open("algorithms/_compare_paths.json") as _f:
+                    _orig_paths = _json.load(_f)
+            except Exception:
+                _orig_paths = []
+            if _orig_paths:
+                cmp_pen = QPen(Qt.GlobalColor.black)
+                cmp_pen.setWidth(2)
+                cmp_pen.setStyle(Qt.PenStyle.DashLine)
+                painter.setPen(cmp_pen)
+                for path in _orig_paths:
+                    for i in range(len(path) - 1):
+                        painter.drawLine(int(path[i][0]), int(path[i][1]), int(path[i+1][0]), int(path[i+1][1]))
+
+        # draw comparison path (narrow-sigmoid vs wide-sigmoid, SETS-DD-CBF) --
+        # only when that algorithm is actually the one selected right now
+        try:
+            _current_alg = self.app_ref.sel_alg.currentText()
+        except Exception:
+            _current_alg = None
+        if _current_alg == "sets_dd_cbf":
+            import json as _json
+            try:
+                with open("algorithms/_compare_paths.json") as _f:
+                    _orig_paths = _json.load(_f)
+            except Exception:
+                _orig_paths = []
+            if _orig_paths:
+                cmp_pen = QPen(Qt.GlobalColor.black)
+                cmp_pen.setWidth(2)
+                cmp_pen.setStyle(Qt.PenStyle.DashLine)
+                painter.setPen(cmp_pen)
+                for path in _orig_paths:
+                    for i in range(len(path) - 1):
+                        painter.drawLine(int(path[i][0]), int(path[i][1]), int(path[i+1][0]), int(path[i+1][1]))
 
         painter.end()
 
@@ -262,6 +326,15 @@ class MainWindow(QMainWindow):
                 self.sel_alg.addItem(f.split(".")[0], f)
 
         left.addWidget(self.sel_alg)
+
+        def _clear_compare_on_alg_change(_index):
+            try:
+                os.remove(os.path.join("algorithms", "_compare_paths.json"))
+            except FileNotFoundError:
+                pass
+            except Exception:
+                pass
+        self.sel_alg.currentIndexChanged.connect(_clear_compare_on_alg_change)
 
         btn_plan = QPushButton("Run ALG")
         btn_plan.clicked.connect(self.B_plan)
